@@ -32,6 +32,12 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "MEDi usa tu ubicación para mostrarte los profesionales de salud más cercanos."
+        }
       ]
     ],
     "experiments": {
