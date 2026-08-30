@@ -25,4 +25,9 @@ Diseño visual:
 - Marca: logo MEDi + tagline "La salud más cerca tuyo". Paleta extraída del logo: navy `#0B3A5C` (títulos/texto principal), teal `#0A6E63`→`#0B8275` (acento/gradiente de botones), gris `#64748B` (texto secundario), fondo `#F7FAFB`.
 - Hay un prototipo cliqueable del flujo completo (onboarding → buscador → resultados → ficha) hecho con Claude Design, usado como referencia visual antes de tocar el código real.
 - `src/app/index.tsx` (la pantalla real, hoy única pantalla) ya está alineada a esa paleta: usa el logo real (`assets/images/medi-logo.png`), un ícono por especialidad, y muestra la `bio` del profesional (columna `profesionales.bio`, ya soportada por el backend) en cada resultado.
-- Pendiente si se quiere llevar el diseño más lejos: separar el flujo en pantallas propias (onboarding con permiso de ubicación como paso explícito, ficha de detalle del profesional) — hoy todo vive en una sola pantalla con carga progresiva de resultados.
+- El flujo ya está separado en pantallas propias: `index.tsx` (bienvenida) → `buscador.tsx` (grilla de especialidades) → `resultados.tsx` (lista de profesionales, con volver e Inicio). Pendiente si se quiere llevar más lejos: ficha de detalle individual del profesional (hoy el contacto se hace directo desde la card de resultados).
+
+Camino a la APK:
+- Íconos reales de MEDi ya en `assets/images/` (icon.png, adaptive icon de Android con foreground/background/monochrome, favicon, splash), reemplazando los genéricos de Expo.
+- `app.json` tiene `android.package` / `ios.bundleIdentifier` = `com.medi.app` (placeholder, fácil de cambiar antes de la primera subida a Google Play / App Store).
+- Pendiente: cuenta de Expo/EAS + `eas build -p android` para generar la APK de prueba. Para iOS hace falta antes inscribirse en el Apple Developer Program (USD 99/año) — sin eso no se puede ni firmar una build de prueba.
