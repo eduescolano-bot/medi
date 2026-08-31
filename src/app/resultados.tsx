@@ -108,31 +108,34 @@ export default function ResultadosScreen() {
         contentContainerStyle={styles.listaContenido}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <View style={styles.cardFila}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarTexto}>
-                  {item.nombre[0]}
-                  {item.apellido[0]}
-                </Text>
-              </View>
-              <View style={styles.cardInfo}>
-                <View style={styles.cardEncabezado}>
-                  <Text style={styles.nombreProfesional} numberOfLines={1}>
-                    {item.nombre} {item.apellido}
+            <Pressable onPress={() => router.push({ pathname: '/perfil', params: { id: String(item.id) } })}>
+              <View style={styles.cardFila}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarTexto}>
+                    {item.nombre[0]}
+                    {item.apellido[0]}
                   </Text>
-                  <Text style={styles.distancia}>{item.distancia_km.toFixed(1)} km</Text>
                 </View>
-                {item.atiende_domicilio && (
-                  <View style={styles.badgeDomicilio}>
-                    <Text style={styles.badgeDomicilioTexto}>🏠 Atiende a domicilio</Text>
+                <View style={styles.cardInfo}>
+                  <View style={styles.cardEncabezado}>
+                    <Text style={styles.nombreProfesional} numberOfLines={1}>
+                      {item.nombre} {item.apellido}
+                    </Text>
+                    <Text style={styles.distancia}>{item.distancia_km.toFixed(1)} km</Text>
                   </View>
-                )}
-                {!!item.bio && <Text style={styles.bio}>{item.bio}</Text>}
-                <Text style={styles.detalle}>
-                  {item.consultorio_nombre} · {item.ciudad}
-                </Text>
+                  {item.atiende_domicilio && (
+                    <View style={styles.badgeDomicilio}>
+                      <Text style={styles.badgeDomicilioTexto}>🏠 Atiende a domicilio</Text>
+                    </View>
+                  )}
+                  {!!item.bio && <Text style={styles.bio}>{item.bio}</Text>}
+                  <Text style={styles.detalle}>
+                    {item.consultorio_nombre} · {item.ciudad}
+                  </Text>
+                  <Text style={styles.verPerfil}>Ver perfil completo →</Text>
+                </View>
               </View>
-            </View>
+            </Pressable>
             <Pressable
               style={styles.botonContacto}
               onPress={() => contactar(item.id, item.whatsapp, item.telefono)}
@@ -218,6 +221,7 @@ const styles = StyleSheet.create({
   badgeDomicilioTexto: { fontSize: 11, fontWeight: '700', color: '#0B8275' },
   bio: { fontSize: 12, color: '#64748B', fontStyle: 'italic', marginTop: 2 },
   detalle: { fontSize: 12, color: '#64748B', marginTop: 4 },
+  verPerfil: { fontSize: 12, color: '#0B8275', fontWeight: '700', marginTop: 6 },
   distancia: { fontSize: 12, color: '#0B8275', fontWeight: '700' },
   botonContacto: {
     backgroundColor: '#ffffff',
