@@ -5,7 +5,9 @@ const db = require('./database')
 
 const app = express()
 app.use(cors())
-app.use(express.json())
+// Límite más alto que el default (100kb): las fotos de perfil viajan como
+// data URL en base64 dentro del JSON, ya comprimidas del lado del panel.
+app.use(express.json({ limit: '2mb' }))
 
 app.get('/health', (req, res) => res.json({ ok: true, servicio: 'MEDi-backend' }))
 

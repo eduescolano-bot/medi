@@ -173,6 +173,15 @@
   .horario-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; font-size: 13px; }
   .horario-row select, .horario-row input { padding: 6px 8px; font-size: 13px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-primary); }
   .maps-link { font-size: 12px; color: var(--brand); text-decoration: underline; }
+  .foto-row { display: flex; align-items: center; gap: 14px; margin: 4px 0 18px; }
+  .foto-preview {
+    width: 64px; height: 64px; border-radius: 50%; overflow: hidden;
+    background: var(--surface-2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: var(--muted); font-size: 20px; flex-shrink: 0;
+  }
+  .foto-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .foto-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
 
   /* ---------- Metrics ---------- */
   .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 26px; }
@@ -259,6 +268,16 @@
         </div>
         <div class="field"><label>Bio / descripción breve</label><textarea id="f-bio"></textarea></div>
 
+        <p class="section-title">Foto de perfil</p>
+        <div class="foto-row">
+          <div class="foto-preview" id="foto-preview">?</div>
+          <div class="foto-acciones">
+            <label class="btn secondary small" for="f-foto-input">Elegir foto</label>
+            <input type="file" id="f-foto-input" accept="image/*" style="display:none">
+            <button type="button" class="btn secondary small" id="quitar-foto-btn">Quitar foto</button>
+          </div>
+        </div>
+
         <div class="toggle-row">
           <input type="checkbox" id="f-atiende-domicilio">
           <label for="f-atiende-domicilio">Atiende a domicilio</label>
@@ -298,7 +317,8 @@
     especialidades: [],       // catálogo [{id, nombre}]
     profesionales: [],        // último listado cargado
     editando: null,           // id del profesional en edición, o null si es alta
-    consultorios: []          // consultorios en el formulario actual (con horarios locales)
+    consultorios: [],         // consultorios en el formulario actual (con horarios locales)
+    fotoDataUrl: null         // foto del formulario actual: null = sin foto, '' = se quitó, string = data URL
   };
 
   // ---------- helpers ----------
@@ -439,6 +459,57 @@
     });
   }
   $('#buscar-input').addEventListener('input', renderProfesionales);
+
+  // ---------- foto de perfil ----------
+  // Redimensiona y comprime la imagen elegida en el navegador antes de
+  // mandarla al backend (se guarda como data URL en base64), para no
+  // depender de ningún servicio externo de almacenamiento de archivos.
+  function comprimirImagen(file) {
+    return new Promise(function (resolve, reject) {
+      var lector = new FileReader();
+      lector.onerror = function () { reject(new Error('No se pudo leer el archivo')); };
+      lector.onload = function () {
+        var img = new Image();
+        img.onerror = function () { reject(new Error('El archivo elegido no es una imagen válida')); };
+        img.onload = function () {
+          var LADO_MAX = 480;
+          var w = img.width, h = img.height;
+          if (w > h && w > LADO_MAX) { h = Math.round(h * (LADO_MAX / w)); w = LADO_MAX; }
+          else if (h >= w && h > LADO_MAX) { w = Math.round(w * (LADO_MAX / h)); h = LADO_MAX; }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
+        };
+        img.src = lector.result;
+      };
+      lector.readAsDataURL(file);
+    });
+  }
+
+  function actualizarPreviewFoto() {
+    var box = $('#foto-preview');
+    if (state.fotoDataUrl) {
+      box.innerHTML = '<img src="' + state.fotoDataUrl + '" alt="">';
+    } else {
+      var nombre = $('#f-nombre').value.trim();
+      box.innerHTML = nombre ? esc(nombre[0].toUpperCase()) : '?';
+    }
+  }
+
+  $('#f-foto-input').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    this.value = '';
+    if (!file) return;
+    comprimirImagen(file).then(function (dataUrl) {
+      state.fotoDataUrl = dataUrl;
+      actualizarPreviewFoto();
+    }).catch(function (e) { showToast(e.message); });
+  });
+  $('#quitar-foto-btn').addEventListener('click', function () {
+    state.fotoDataUrl = '';
+    actualizarPreviewFoto();
+  });
 
   // ---------- modal: alta / edición ----------
   function renderEspecialidadesBox(seleccionadas) {
@@ -594,10 +665,12 @@
   $('#nuevo-profesional-btn').addEventListener('click', function () {
     state.editando = null;
     state.consultorios = [{ horarios: [] }];
+    state.fotoDataUrl = null;
     $('#profesional-form').reset();
     $('#f-atiende-domicilio').checked = false;
     renderEspecialidadesBox([]);
     renderConsultorios();
+    actualizarPreviewFoto();
     abrirModal(false);
   });
 
@@ -613,10 +686,12 @@
       $('#f-bio').value = p.bio || '';
       $('#f-atiende-domicilio').checked = !!p.atiende_domicilio;
       $('#f-activo').checked = p.activo !== false;
+      state.fotoDataUrl = p.foto_url || null;
       renderEspecialidadesBox((p.especialidades || []).map(function (e) { return e.id; }));
       state.consultorios = (p.consultorios || []).map(function (c) { return Object.assign({ esExistente: true }, c); });
       if (state.consultorios.length === 0) state.consultorios = [{ horarios: [] }];
       renderConsultorios();
+      actualizarPreviewFoto();
       abrirModal(true);
     }).catch(function (e) { showToast(e.message); });
   }
@@ -639,7 +714,8 @@
         matricula: $('#f-matricula').value.trim() || null,
         bio: $('#f-bio').value.trim() || null,
         atiende_domicilio: $('#f-atiende-domicilio').checked,
-        activo: $('#f-activo').checked
+        activo: $('#f-activo').checked,
+        foto_url: state.fotoDataUrl
       };
       Promise.all([
         api('/admin/profesionales/' + state.editando, { method: 'PUT', body: datosBasicos }),
@@ -675,7 +751,8 @@
         atiende_domicilio: $('#f-atiende-domicilio').checked,
         especialidad_ids: especialidadIds,
         consultorio: tieneConsultorio ? primerConsultorio : undefined,
-        horarios: tieneConsultorio ? (primerConsultorio.horarios || []) : undefined
+        horarios: tieneConsultorio ? (primerConsultorio.horarios || []) : undefined,
+        foto_url: state.fotoDataUrl || undefined
       };
       if (!tieneConsultorio && !body.atiende_domicilio) {
         err.textContent = 'Cargá la ubicación del consultorio (lat/lng) o marcá "Atiende a domicilio".';

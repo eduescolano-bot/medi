@@ -26,6 +26,8 @@ type Consultorio = {
   ciudad: string | null;
   provincia: string | null;
   telefono: string | null;
+  lat: number | null;
+  lng: number | null;
   horarios: Horario[] | null;
 };
 type Perfil = {
@@ -36,10 +38,16 @@ type Perfil = {
   bio: string | null;
   whatsapp: string | null;
   telefono: string | null;
+  foto_url: string | null;
   atiende_domicilio: boolean;
   especialidades: { id: number; nombre: string }[] | null;
   obras_sociales: { id: number; nombre: string }[] | null;
   consultorios: Consultorio[] | null;
+};
+
+const comoLlegar = (lat: number | null, lng: number | null) => {
+  if (lat == null || lng == null) return;
+  Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
 };
 
 export default function PerfilScreen() {
@@ -110,12 +118,16 @@ export default function PerfilScreen() {
       {perfil && (
         <ScrollView contentContainerStyle={styles.contenido}>
           <View style={styles.encabezado}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarTexto}>
-                {perfil.nombre[0]}
-                {perfil.apellido[0]}
-              </Text>
-            </View>
+            {perfil.foto_url ? (
+              <Image source={{ uri: perfil.foto_url }} style={styles.avatarFoto} contentFit="cover" />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarTexto}>
+                  {perfil.nombre[0]}
+                  {perfil.apellido[0]}
+                </Text>
+              </View>
+            )}
             <Text style={styles.nombre}>
               {perfil.nombre} {perfil.apellido}
             </Text>
@@ -180,6 +192,11 @@ export default function PerfilScreen() {
                         ))}
                     </View>
                   )}
+                  {c.lat != null && c.lng != null && (
+                    <Pressable style={styles.botonComoLlegar} onPress={() => comoLlegar(c.lat, c.lng)}>
+                      <Text style={styles.botonComoLlegarTexto}>📍 Cómo llegar</Text>
+                    </Pressable>
+                  )}
                 </View>
               ))}
             </View>
@@ -243,6 +260,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   avatarTexto: { color: '#ffffff', fontWeight: '700', fontSize: 22 },
+  avatarFoto: { width: 68, height: 68, borderRadius: 34, marginBottom: 12, backgroundColor: '#E4EBF0' },
   nombre: { fontSize: 19, fontWeight: '700', color: '#0B3A5C', textAlign: 'center' },
   matricula: { fontSize: 12.5, color: '#64748B', marginTop: 2 },
   chipsFila: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginTop: 12 },
@@ -283,6 +301,15 @@ const styles = StyleSheet.create({
   consultorioDetalle: { fontSize: 13, color: '#52514E', marginTop: 2 },
   horariosBox: { marginTop: 8, gap: 2 },
   horarioLinea: { fontSize: 12.5, color: '#64748B' },
+  botonComoLlegar: {
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 9,
+    backgroundColor: '#EAF1F5',
+  },
+  botonComoLlegarTexto: { fontSize: 12.5, fontWeight: '700', color: '#0B3A5C' },
   botonContacto: {
     backgroundColor: '#0B8275',
     paddingVertical: 14,

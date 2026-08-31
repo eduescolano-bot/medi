@@ -42,7 +42,7 @@ router.get('/profesionales/:id', async (req, res) => {
   try {
     const resultado = await db.query(
       `SELECT p.id, p.nombre, p.apellido, p.email, p.dni, p.telefono, p.whatsapp, p.matricula,
-        p.bio, p.activo, p.atiende_domicilio,
+        p.bio, p.activo, p.atiende_domicilio, p.foto_url,
         (SELECT json_agg(json_build_object('id', e.id, 'nombre', e.nombre) ORDER BY e.nombre)
           FROM especialidades e JOIN profesional_especialidades pe ON pe.especialidad_id = e.id
           WHERE pe.profesional_id = p.id) as especialidades,
@@ -73,7 +73,7 @@ router.post('/profesionales', async (req, res) => {
   try {
     const {
       nombre, apellido, email, telefono, whatsapp, matricula, bio,
-      atiende_domicilio, especialidad_ids, consultorio, horarios
+      atiende_domicilio, especialidad_ids, consultorio, horarios, foto_url
     } = req.body
     if (!nombre || !apellido) {
       return res.status(400).json({ error: 'Nombre y apellido son obligatorios' })
@@ -85,9 +85,9 @@ router.post('/profesionales', async (req, res) => {
     await client.query('BEGIN')
 
     const resultado = await client.query(
-      `INSERT INTO profesionales (nombre, apellido, email, password_hash, telefono, whatsapp, matricula, bio, atiende_domicilio)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-      [nombre, apellido, emailFinal.toLowerCase(), password_hash, telefono || null, whatsapp || null, matricula || null, bio || null, !!atiende_domicilio]
+      `INSERT INTO profesionales (nombre, apellido, email, password_hash, telefono, whatsapp, matricula, bio, atiende_domicilio, foto_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+      [nombre, apellido, emailFinal.toLowerCase(), password_hash, telefono || null, whatsapp || null, matricula || null, bio || null, !!atiende_domicilio, foto_url || null]
     )
     const profesional_id = resultado.rows[0].id
 
@@ -124,13 +124,16 @@ router.post('/profesionales', async (req, res) => {
 // Edición de datos básicos de un profesional ya existente.
 router.put('/profesionales/:id', async (req, res) => {
   try {
-    const { nombre, apellido, telefono, whatsapp, matricula, bio, atiende_domicilio, activo } = req.body
+    const { nombre, apellido, telefono, whatsapp, matricula, bio, atiende_domicilio, activo, foto_url } = req.body
+    // foto_url es opcional en este endpoint: si no viene en el body (undefined),
+    // no tocamos la que ya estaba guardada — así el formulario puede mandar
+    // solo los datos básicos sin borrar sin querer la foto ya cargada.
     await db.query(
       `UPDATE profesionales SET nombre=$1, apellido=$2, telefono=$3, whatsapp=$4, matricula=$5, bio=$6,
-        atiende_domicilio=$7, activo=$8
-       WHERE id=$9`,
+        atiende_domicilio=$7, activo=$8, foto_url=COALESCE($9, foto_url)
+       WHERE id=$10`,
       [nombre, apellido, telefono || null, whatsapp || null, matricula || null, bio || null,
-       !!atiende_domicilio, activo !== false, req.params.id]
+       !!atiende_domicilio, activo !== false, foto_url === undefined ? null : foto_url, req.params.id]
     )
     res.json({ mensaje: '✅ Profesional actualizado' })
   } catch (e) { res.status(500).json({ error: e.message }) }
