@@ -65,6 +65,16 @@ Node / Express / PostgreSQL (mismo stack que MED Conectado, pero proyecto y base
 - `POST/PUT/DELETE /admin/consultorios` y `/admin/horarios` — gestión de consultorios y horarios de cualquier profesional.
 - `GET /admin/metricas` — búsquedas por especialidad y contactos por profesional.
 
+## Panel de administración (cómo abrirlo)
+
+El panel vive como un único archivo HTML en `admin/index.html`, dentro de esta
+misma carpeta (`MEDi-backend`). No es una web publicada: es un archivo que se
+abre localmente con doble clic (se abre en el navegador) y desde ahí habla
+directo con la API de Railway. Pide la contraseña de `ADMIN_PASSWORD` para
+entrar. Desde el panel se pueden cargar y editar profesionales (incluidos
+odontólogos u otras especialidades nuevas), marcar "atiende a domicilio", y
+ver las métricas de búsquedas y contactos.
+
 ## Pendiente para fases siguientes
 
 - Reserva de turnos online (el MVP usa contacto directo por WhatsApp/llamada con el `whatsapp`/`telefono` del profesional).
