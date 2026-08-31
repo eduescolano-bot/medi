@@ -39,6 +39,7 @@ export default function ResultadosScreen() {
   const [resultados, setResultados] = useState<Resultado[] | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [soloDomicilio, setSoloDomicilio] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -74,6 +75,9 @@ export default function ResultadosScreen() {
     Linking.openURL(`https://wa.me/549${numero.replace(/\D/g, '')}`);
   };
 
+  const resultadosFiltrados = (resultados ?? []).filter((r) => !soloDomicilio || r.atiende_domicilio);
+  const cantidadDomicilio = (resultados ?? []).filter((r) => r.atiende_domicilio).length;
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.topBar}>
@@ -98,12 +102,29 @@ export default function ResultadosScreen() {
 
       {error && <Text style={styles.error}>{error}</Text>}
       {cargando && <ActivityIndicator style={{ marginTop: 24 }} color="#0B8275" />}
+
+      {!cargando && resultados && resultados.length > 0 && cantidadDomicilio > 0 && (
+        <View style={styles.filtroFila}>
+          <Pressable
+            style={[styles.filtroChip, soloDomicilio && styles.filtroChipActivo]}
+            onPress={() => setSoloDomicilio((v) => !v)}
+          >
+            <Text style={[styles.filtroChipTexto, soloDomicilio && styles.filtroChipTextoActivo]}>
+              🏠 Solo a domicilio ({cantidadDomicilio})
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
       {resultados && resultados.length === 0 && !cargando && (
         <Text style={styles.vacio}>No encontramos profesionales cerca para esa especialidad todavía.</Text>
       )}
+      {resultados && resultados.length > 0 && resultadosFiltrados.length === 0 && !cargando && (
+        <Text style={styles.vacio}>Ninguno de los profesionales encontrados atiende a domicilio.</Text>
+      )}
 
       <FlatList
-        data={resultados ?? []}
+        data={resultadosFiltrados}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listaContenido}
         renderItem={({ item }) => (
@@ -188,6 +209,19 @@ const styles = StyleSheet.create({
   resultadosSubtitulo: { fontSize: 12, color: '#64748B', marginTop: 2 },
   error: { color: '#c0392b', marginHorizontal: 16, marginTop: 12 },
   vacio: { textAlign: 'center', color: '#64748B', marginTop: 24, marginHorizontal: 16 },
+  filtroFila: { paddingHorizontal: 16, paddingTop: 14 },
+  filtroChip: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#D7E2E8',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  filtroChipActivo: { backgroundColor: '#0B8275', borderColor: '#0B8275' },
+  filtroChipTexto: { fontSize: 13, fontWeight: '700', color: '#0B3A5C' },
+  filtroChipTextoActivo: { color: '#ffffff' },
   listaContenido: { padding: 16, gap: 12 },
   card: {
     padding: 16,
