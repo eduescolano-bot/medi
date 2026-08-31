@@ -26,6 +26,7 @@ type Resultado = {
   consultorio_nombre: string;
   ciudad: string;
   distancia_km: number;
+  atiende_domicilio: boolean;
 };
 
 export default function ResultadosScreen() {
@@ -60,9 +61,16 @@ export default function ResultadosScreen() {
     };
   }, [params.especialidadId, params.lat, params.lng]);
 
-  const contactar = (whatsapp: string | null, telefono: string | null) => {
+  const contactar = (profesionalId: number, whatsapp: string | null, telefono: string | null) => {
     const numero = whatsapp || telefono;
     if (!numero) return;
+    // No bloqueamos la apertura de WhatsApp esperando la respuesta: si falla
+    // el registro de la métrica, igual dejamos contactar al profesional.
+    fetch(`${API_BASE}/publico/registrar-contacto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profesional_id: profesionalId, medio: 'whatsapp' }),
+    }).catch(() => {});
     Linking.openURL(`https://wa.me/549${numero.replace(/\D/g, '')}`);
   };
 
@@ -114,13 +122,21 @@ export default function ResultadosScreen() {
                   </Text>
                   <Text style={styles.distancia}>{item.distancia_km.toFixed(1)} km</Text>
                 </View>
+                {item.atiende_domicilio && (
+                  <View style={styles.badgeDomicilio}>
+                    <Text style={styles.badgeDomicilioTexto}>🏠 Atiende a domicilio</Text>
+                  </View>
+                )}
                 {!!item.bio && <Text style={styles.bio}>{item.bio}</Text>}
                 <Text style={styles.detalle}>
                   {item.consultorio_nombre} · {item.ciudad}
                 </Text>
               </View>
             </View>
-            <Pressable style={styles.botonContacto} onPress={() => contactar(item.whatsapp, item.telefono)}>
+            <Pressable
+              style={styles.botonContacto}
+              onPress={() => contactar(item.id, item.whatsapp, item.telefono)}
+            >
               <Text style={styles.botonContactoTexto}>Contactar por WhatsApp</Text>
             </Pressable>
           </View>
@@ -191,6 +207,15 @@ const styles = StyleSheet.create({
   cardInfo: { flex: 1 },
   cardEncabezado: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
   nombreProfesional: { fontSize: 15, fontWeight: '700', color: '#0B3A5C', flexShrink: 1 },
+  badgeDomicilio: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#E3F3F0',
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginTop: 5,
+  },
+  badgeDomicilioTexto: { fontSize: 11, fontWeight: '700', color: '#0B8275' },
   bio: { fontSize: 12, color: '#64748B', fontStyle: 'italic', marginTop: 2 },
   detalle: { fontSize: 12, color: '#64748B', marginTop: 4 },
   distancia: { fontSize: 12, color: '#0B8275', fontWeight: '700' },
