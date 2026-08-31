@@ -16,6 +16,7 @@ app.use('/horarios', require('./routes/horarios'))
 app.use('/especialidades', require('./routes/especialidades'))
 app.use('/obras-sociales', require('./routes/obras-sociales'))
 app.use('/publico', require('./routes/publico'))
+app.use('/admin', require('./routes/admin'))
 
 app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada' }))
 

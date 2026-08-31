@@ -80,6 +80,26 @@ async function migrar() {
       hora_fin TIME NOT NULL
     )`)
 
+    // Marca si el profesional atiende a domicilio, además de (u opcionalmente
+    // en vez de) en consultorio. Se muestra como distintivo en los resultados.
+    await client.query(`ALTER TABLE profesionales ADD COLUMN IF NOT EXISTS atiende_domicilio BOOLEAN DEFAULT false`)
+
+    // Métricas para el panel de administración: un renglón por cada búsqueda
+    // pública y por cada clic en "Contactar", para poder ver qué especialidad
+    // se busca más y con qué profesionales interactúan más.
+    await client.query(`CREATE TABLE IF NOT EXISTS eventos_busqueda (
+      id SERIAL PRIMARY KEY,
+      especialidad_id INTEGER REFERENCES especialidades(id) ON DELETE SET NULL,
+      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`)
+
+    await client.query(`CREATE TABLE IF NOT EXISTS eventos_contacto (
+      id SERIAL PRIMARY KEY,
+      profesional_id INTEGER REFERENCES profesionales(id) ON DELETE SET NULL,
+      medio TEXT,
+      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`)
+
     // Catálogos iniciales: se insertan una sola vez, no pisan lo que el
     // usuario haya editado (ON CONFLICT DO NOTHING sobre el nombre único).
     for (const nombre of ESPECIALIDADES_INICIALES) {

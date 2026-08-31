@@ -53,11 +53,21 @@ Node / Express / PostgreSQL (mismo stack que MED Conectado, pero proyecto y base
 - `GET /obras-sociales`
 
 **Búsqueda pública** (`/publico`, sin login — la usa la app del paciente)
-- `GET /publico/buscar?especialidad_id=&lat=&lng=&radio_km=&obra_social_id=` — profesionales cercanos, ordenados por distancia. `radio_km` es opcional (default 20). `obra_social_id` es opcional.
+- `GET /publico/buscar?especialidad_id=&lat=&lng=&radio_km=&obra_social_id=` — profesionales cercanos, ordenados por distancia. `radio_km` es opcional (default 20). `obra_social_id` es opcional. Cada búsqueda queda registrada (`eventos_busqueda`) para las métricas del panel.
 - `GET /publico/profesional/:id` — ficha completa (datos, especialidades, obras sociales, consultorios con horarios).
+- `POST /publico/registrar-contacto` (`{ profesional_id, medio }`) — la app lo llama cuando el paciente toca "Contactar"; queda registrado en `eventos_contacto` para las métricas.
+
+**Panel de administración** (`/admin`, protegido con contraseña — no requiere cuenta de profesional)
+- `POST /admin/login` (`{ password }`, compara contra `ADMIN_PASSWORD`) — devuelve un token para el resto de `/admin`.
+- `GET /admin/profesionales` / `GET /admin/profesionales/:id` — listado y ficha completa para editar.
+- `POST /admin/profesionales` — alta de un profesional nuevo (datos, especialidades, y opcionalmente un consultorio con sus horarios).
+- `PUT /admin/profesionales/:id` / `PUT /admin/profesionales/:id/especialidades` — edición de datos básicos, `atiende_domicilio`, `activo`, y especialidades.
+- `POST/PUT/DELETE /admin/consultorios` y `/admin/horarios` — gestión de consultorios y horarios de cualquier profesional.
+- `GET /admin/metricas` — búsquedas por especialidad y contactos por profesional.
 
 ## Pendiente para fases siguientes
 
 - Reserva de turnos online (el MVP usa contacto directo por WhatsApp/llamada con el `whatsapp`/`telefono` del profesional).
 - Cobro a profesionales (comisión o suscripción) — arranca gratis para sumar volumen.
 - Integración con MED Conectado si en algún momento hace falta compartir datos entre ambas apps.
+- Autoregistro real de profesionales desde la app (hoy la carga la hace el admin desde el panel).

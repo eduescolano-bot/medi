@@ -20,7 +20,7 @@ router.get('/buscar', async (req, res) => {
     const query = `
       SELECT * FROM (
         SELECT DISTINCT ON (p.id)
-          p.id, p.nombre, p.apellido, p.matricula, p.foto_url, p.whatsapp, p.telefono, p.bio,
+          p.id, p.nombre, p.apellido, p.matricula, p.foto_url, p.whatsapp, p.telefono, p.bio, p.atiende_domicilio,
           c.id as consultorio_id, c.nombre as consultorio_nombre, c.direccion, c.ciudad, c.provincia, c.lat, c.lng,
           (6371 * acos(LEAST(1, GREATEST(-1,
               cos(radians($1)) * cos(radians(c.lat)) * cos(radians(c.lng) - radians($2)) + sin(radians($1)) * sin(radians(c.lat))
@@ -41,7 +41,24 @@ router.get('/buscar', async (req, res) => {
       ORDER BY distancia_km ASC
     `
     const resultado = await db.query(query, [lat, lng, especialidad_id, radio_km, obra_social_id])
+
+    // No bloquea la respuesta: si falla el registro de la métrica, la
+    // búsqueda igual se devuelve normalmente.
+    db.query('INSERT INTO eventos_busqueda (especialidad_id) VALUES ($1)', [especialidad_id]).catch(() => {})
+
     res.json(resultado.rows)
+  } catch (e) { res.status(500).json({ error: e.message }) }
+})
+
+// Registra un clic en "Contactar" (WhatsApp o llamada) para las métricas del
+// panel de administración. No requiere login: lo llama la app pública.
+router.post('/registrar-contacto', async (req, res) => {
+  try {
+    const profesional_id = Number(req.body.profesional_id)
+    const medio = req.body.medio === 'llamada' ? 'llamada' : 'whatsapp'
+    if (!profesional_id) return res.status(400).json({ error: 'Se requiere profesional_id' })
+    await db.query('INSERT INTO eventos_contacto (profesional_id, medio) VALUES ($1,$2)', [profesional_id, medio])
+    res.json({ ok: true })
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
 
@@ -50,7 +67,7 @@ router.get('/buscar', async (req, res) => {
 router.get('/profesional/:id', async (req, res) => {
   try {
     const resultado = await db.query(
-      `SELECT p.id, p.nombre, p.apellido, p.matricula, p.bio, p.foto_url, p.whatsapp, p.telefono,
+      `SELECT p.id, p.nombre, p.apellido, p.matricula, p.bio, p.foto_url, p.whatsapp, p.telefono, p.atiende_domicilio,
         (SELECT json_agg(json_build_object('id', e.id, 'nombre', e.nombre))
           FROM especialidades e JOIN profesional_especialidades pe ON pe.especialidad_id = e.id
           WHERE pe.profesional_id = p.id) as especialidades,
