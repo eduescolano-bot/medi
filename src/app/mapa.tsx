@@ -46,7 +46,16 @@ export default function MapaScreen() {
         setUbicacion(loc);
         const r = await fetch(`${API_BASE}/publico/mapa?lat=${loc.lat}&lng=${loc.lng}&radio_km=50`);
         const data = await r.json();
-        if (!cancelado) setProfesionales(data);
+        // El backend puede devolver un objeto de error (ej. si esta ruta
+        // todavía no está desplegada) en vez de una lista — nunca asumimos
+        // que la respuesta es un array.
+        if (!cancelado) {
+          if (Array.isArray(data)) {
+            setProfesionales(data);
+          } else {
+            setError('No pudimos cargar los profesionales cercanos. Probá de nuevo en un rato.');
+          }
+        }
       } catch {
         if (!cancelado) setError('No pudimos obtener tu ubicación. Activá el GPS e intentá de nuevo.');
       } finally {
