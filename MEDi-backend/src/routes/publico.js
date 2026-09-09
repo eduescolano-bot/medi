@@ -50,6 +50,45 @@ router.get('/buscar', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
 
+// Vista de mapa: TODOS los profesionales activos cerca de una ubicación, sin
+// filtrar por especialidad (para la pantalla /mapa, tipo "estaciones de
+// servicio cerca tuyo" de Google Maps). Devuelve el consultorio más cercano
+// de cada profesional y sus especialidades, para armar el pin y el callout.
+router.get('/mapa', async (req, res) => {
+  try {
+    const lat = Number(req.query.lat)
+    const lng = Number(req.query.lng)
+    const radio_km = req.query.radio_km ? Number(req.query.radio_km) : 50
+
+    if (!lat || !lng) {
+      return res.status(400).json({ error: 'Se requiere lat y lng' })
+    }
+
+    const query = `
+      SELECT * FROM (
+        SELECT DISTINCT ON (p.id)
+          p.id, p.nombre, p.apellido, p.atiende_domicilio,
+          c.id as consultorio_id, c.nombre as consultorio_nombre, c.ciudad, c.lat, c.lng,
+          (SELECT json_agg(e.nombre) FROM especialidades e
+            JOIN profesional_especialidades pe ON pe.especialidad_id = e.id
+            WHERE pe.profesional_id = p.id) as especialidades,
+          (6371 * acos(LEAST(1, GREATEST(-1,
+              cos(radians($1)) * cos(radians(c.lat)) * cos(radians(c.lng) - radians($2)) + sin(radians($1)) * sin(radians(c.lat))
+          )))) AS distancia_km
+        FROM profesionales p
+        JOIN consultorios c ON c.profesional_id = p.id
+        WHERE p.activo = true
+          AND c.lat IS NOT NULL AND c.lng IS NOT NULL
+        ORDER BY p.id, distancia_km ASC
+      ) resultados
+      WHERE distancia_km <= $3
+      ORDER BY distancia_km ASC
+    `
+    const resultado = await db.query(query, [lat, lng, radio_km])
+    res.json(resultado.rows)
+  } catch (e) { res.status(500).json({ error: e.message }) }
+})
+
 // Registra un clic en "Contactar" (WhatsApp o llamada) para las métricas del
 // panel de administración. No requiere login: lo llama la app pública.
 router.post('/registrar-contacto', async (req, res) => {

@@ -289,6 +289,10 @@
 
         <p class="section-title">Especialidades</p>
         <div class="especialidades-box" id="especialidades-box"></div>
+        <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+          <div class="search-input" style="max-width:none;"><input type="text" id="nueva-especialidad-input" placeholder="Especialidad nueva (ej: Veterinaria)…"></div>
+          <button type="button" class="btn secondary small" id="agregar-especialidad-btn">+ Agregar</button>
+        </div>
 
         <p class="section-title" id="consultorios-title">Consultorio</p>
         <div id="consultorios-container"></div>
@@ -521,6 +525,26 @@
         '<label for="esp-' + e.id + '">' + esc(e.nombre) + '</label></div>';
     }).join('');
   }
+
+  // Alta rápida de una especialidad nueva en el catálogo, sin salir del
+  // formulario: la agrega al backend, la suma a la lista local y la marca
+  // como seleccionada para el profesional que se está cargando/editando.
+  $('#agregar-especialidad-btn').addEventListener('click', function () {
+    var input = $('#nueva-especialidad-input');
+    var nombre = input.value.trim();
+    if (!nombre) return;
+    api('/admin/especialidades', { method: 'POST', body: { nombre: nombre } }).then(function (nueva) {
+      var seleccionadas = $all('#especialidades-box input:checked').map(function (i) { return Number(i.value); });
+      if (!state.especialidades.some(function (e) { return e.id === nueva.id; })) {
+        state.especialidades.push(nueva);
+        state.especialidades.sort(function (a, b) { return a.nombre.localeCompare(b.nombre); });
+      }
+      if (seleccionadas.indexOf(nueva.id) === -1) seleccionadas.push(nueva.id);
+      renderEspecialidadesBox(seleccionadas);
+      input.value = '';
+      showToast('✅ Especialidad agregada');
+    }).catch(function (e) { showToast('❌ ' + e.message); });
+  });
 
   function consultorioTemplate(c, idx) {
     c = c || {};

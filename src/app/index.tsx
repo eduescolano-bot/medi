@@ -18,9 +18,14 @@ export default function BienvenidaScreen() {
         </Text>
       </View>
 
-      <Pressable style={styles.boton} onPress={() => router.push('/buscador')}>
-        <Text style={styles.botonTexto}>Buscar un profesional</Text>
-      </Pressable>
+      <View style={styles.botones}>
+        <Pressable style={styles.boton} onPress={() => router.push('/buscador')}>
+          <Text style={styles.botonTexto}>Buscar un profesional</Text>
+        </Pressable>
+        <Pressable style={styles.botonSecundario} onPress={() => router.push('/mapa')}>
+          <Text style={styles.botonSecundarioTexto}>🗺️ Ver mapa de profesionales cerca tuyo</Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -37,6 +42,7 @@ const styles = StyleSheet.create({
   logo: { width: 220, height: 145 },
   titulo: { fontSize: 22, fontWeight: '700', color: '#0B3A5C', textAlign: 'center', lineHeight: 28 },
   subtitulo: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, maxWidth: 280 },
+  botones: { gap: 10 },
   boton: {
     backgroundColor: '#0B8275',
     borderRadius: 14,
@@ -44,4 +50,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   botonTexto: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+  botonSecundario: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#D7E2E8',
+    borderRadius: 14,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  botonSecundarioTexto: { color: '#0B3A5C', fontWeight: '700', fontSize: 14 },
 });

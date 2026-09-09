@@ -16,6 +16,7 @@ export default function RootLayout() {
         <Stack.Screen name="buscador" />
         <Stack.Screen name="resultados" />
         <Stack.Screen name="perfil" />
+        <Stack.Screen name="mapa" />
       </Stack>
     </ThemeProvider>
   );

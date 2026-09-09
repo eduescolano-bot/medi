@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -8,32 +9,35 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // falta estar en la misma WiFi que la PC ni tenerla prendida.
 const API_BASE = 'https://medi-backend-production-ab1c.up.railway.app';
 
-// Un ícono acorde por especialidad, para que el buscador sea más fácil de
-// escanear de un vistazo (coincide con el prototipo de diseño de MEDi).
-const ICONOS_ESPECIALIDAD: Record<string, string> = {
-  'Clínica médica': '🩺',
-  Pediatría: '👶',
-  Ginecología: '🌸',
-  Cardiología: '❤️',
-  Dermatología: '💧',
-  Traumatología: '🦴',
-  Oftalmología: '👁️',
-  Otorrinolaringología: '👂',
-  Psiquiatría: '💭',
-  Psicología: '💬',
-  Nutrición: '🍎',
-  Kinesiología: '🤸',
-  Odontología: '🦷',
-  Neurología: '🧠',
-  Urología: '🫘',
-  Endocrinología: '🧪',
-  Gastroenterología: '🍽️',
-  'Alergia e inmunología': '🤧',
-  Fonoaudiología: '🗣️',
-  Reumatología: '🦿',
+type IconoEspecialidad = keyof typeof MaterialCommunityIcons.glyphMap;
+
+// Un ícono de línea (no emoji) por especialidad, para que el buscador se vea
+// más sobrio y profesional en vez de amateur. Coincide en color con la
+// paleta de marca (se pinta con el teal de acento al renderizarlo).
+const ICONOS_ESPECIALIDAD: Record<string, IconoEspecialidad> = {
+  'Clínica médica': 'stethoscope',
+  Pediatría: 'baby-face-outline',
+  Ginecología: 'human-female',
+  Cardiología: 'heart-pulse',
+  Dermatología: 'water-outline',
+  Traumatología: 'bone',
+  Oftalmología: 'eye-outline',
+  Otorrinolaringología: 'ear-hearing',
+  Psiquiatría: 'pill',
+  Psicología: 'chat-outline',
+  Nutrición: 'food-apple-outline',
+  Kinesiología: 'run',
+  Odontología: 'tooth-outline',
+  Neurología: 'brain',
+  Urología: 'water',
+  Endocrinología: 'flask-outline',
+  Gastroenterología: 'silverware-fork-knife',
+  'Alergia e inmunología': 'shield-outline',
+  Fonoaudiología: 'microphone-outline',
+  Reumatología: 'hand-back-left-outline',
 };
 
-const iconoDe = (nombre: string) => ICONOS_ESPECIALIDAD[nombre] ?? '🩺';
+const iconoDe = (nombre: string): IconoEspecialidad => ICONOS_ESPECIALIDAD[nombre] ?? 'stethoscope';
 
 type Especialidad = { id: number; nombre: string };
 
@@ -112,7 +116,9 @@ export default function BuscadorScreen() {
               disabled={cargandoUbicacion}
               onPress={() => seleccionarEspecialidad(item)}
             >
-              <Text style={styles.chipIcono}>{iconoDe(item.nombre)}</Text>
+              <View style={styles.chipIconoBox}>
+                <MaterialCommunityIcons name={iconoDe(item.nombre)} size={19} color="#0B8275" />
+              </View>
               <Text style={styles.chipTexto} numberOfLines={2}>
                 {item.nombre}
               </Text>
@@ -168,6 +174,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4EBF0',
   },
-  chipIcono: { fontSize: 16 },
+  chipIconoBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#E3F3F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chipTexto: { color: '#0B3A5C', fontSize: 13, fontWeight: '600', flexShrink: 1 },
 });

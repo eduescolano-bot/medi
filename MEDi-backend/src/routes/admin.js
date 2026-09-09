@@ -210,6 +210,23 @@ router.delete('/horarios/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
 
+// Alta de una especialidad nueva en el catálogo (para sumar rubros que no
+// estaban en la lista inicial, sin tocar código ni la base a mano). Si el
+// nombre ya existe, devuelve la fila existente en vez de duplicarla.
+router.post('/especialidades', async (req, res) => {
+  try {
+    const nombre = (req.body.nombre || '').trim()
+    if (!nombre) return res.status(400).json({ error: 'Se requiere un nombre' })
+    const resultado = await db.query(
+      `INSERT INTO especialidades (nombre) VALUES ($1)
+       ON CONFLICT (nombre) DO UPDATE SET nombre = EXCLUDED.nombre
+       RETURNING id, nombre`,
+      [nombre]
+    )
+    res.json(resultado.rows[0])
+  } catch (e) { res.status(500).json({ error: e.message }) }
+})
+
 // Métricas: qué especialidades se buscan más y con qué profesionales
 // interactúan más (clics en "Contactar").
 router.get('/metricas', async (req, res) => {
