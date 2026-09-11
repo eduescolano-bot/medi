@@ -153,9 +153,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconTexto: { fontSize: 18, color: '#0B3A5C' },
-  topBarTitulo: { fontSize: 17, fontWeight: '700', color: '#0B3A5C' },
+  topBarTitulo: { fontFamily: 'Poppins-Bold', fontSize: 17, color: '#0B3A5C' },
   scrollContenido: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 32 },
-  error: { color: '#c0392b', marginBottom: 8 },
+  error: { fontFamily: 'WorkSans-Regular', color: '#c0392b', marginBottom: 8 },
   chipsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -182,5 +182,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chipTexto: { color: '#0B3A5C', fontSize: 13, fontWeight: '600', flexShrink: 1 },
+  chipTexto: { color: '#0B3A5C', fontSize: 13, fontFamily: 'WorkSans-SemiBold', flexShrink: 1 },
 });

@@ -6,6 +6,7 @@ import {
   FlatList,
   Linking,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -29,6 +30,10 @@ type Resultado = {
   atiende_domicilio: boolean;
 };
 
+type ObraSocial = { id: number; nombre: string };
+
+const OPCIONES_DISTANCIA = [10, 25, 50] as const;
+
 export default function ResultadosScreen() {
   const params = useLocalSearchParams<{
     especialidadId: string;
@@ -40,12 +45,31 @@ export default function ResultadosScreen() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [soloDomicilio, setSoloDomicilio] = useState(false);
+  const [obrasSociales, setObrasSociales] = useState<ObraSocial[]>([]);
+  const [obraSocialId, setObraSocialId] = useState<number | null>(null);
+  const [radioKm, setRadioKm] = useState<(typeof OPCIONES_DISTANCIA)[number]>(50);
+
+  // Catálogo de obras sociales para el filtro — se pide una sola vez, no
+  // depende de la especialidad ni de la ubicación.
+  useEffect(() => {
+    let cancelado = false;
+    fetch(`${API_BASE}/obras-sociales`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelado && Array.isArray(data)) setObrasSociales(data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
     setCargando(true);
     setError(null);
-    const url = `${API_BASE}/publico/buscar?especialidad_id=${params.especialidadId}&lat=${params.lat}&lng=${params.lng}&radio_km=50`;
+    const filtroObraSocial = obraSocialId ? `&obra_social_id=${obraSocialId}` : '';
+    const url = `${API_BASE}/publico/buscar?especialidad_id=${params.especialidadId}&lat=${params.lat}&lng=${params.lng}&radio_km=${radioKm}${filtroObraSocial}`;
     fetch(url)
       .then((r) => r.json())
       .then((data) => {
@@ -60,7 +84,7 @@ export default function ResultadosScreen() {
     return () => {
       cancelado = true;
     };
-  }, [params.especialidadId, params.lat, params.lng]);
+  }, [params.especialidadId, params.lat, params.lng, obraSocialId, radioKm]);
 
   const contactar = (profesionalId: number, whatsapp: string | null, telefono: string | null) => {
     const numero = whatsapp || telefono;
@@ -101,6 +125,50 @@ export default function ResultadosScreen() {
       </View>
 
       {error && <Text style={styles.error}>{error}</Text>}
+
+      {obrasSociales.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filtroObraSocialScroll}
+          contentContainerStyle={styles.filtroObraSocialContenido}
+        >
+          <Pressable
+            style={[styles.filtroChip, obraSocialId === null && styles.filtroChipActivo]}
+            onPress={() => setObraSocialId(null)}
+          >
+            <Text style={[styles.filtroChipTexto, obraSocialId === null && styles.filtroChipTextoActivo]}>
+              Todas las obras sociales
+            </Text>
+          </Pressable>
+          {obrasSociales.map((os) => (
+            <Pressable
+              key={os.id}
+              style={[styles.filtroChip, obraSocialId === os.id && styles.filtroChipActivo]}
+              onPress={() => setObraSocialId((actual) => (actual === os.id ? null : os.id))}
+            >
+              <Text style={[styles.filtroChipTexto, obraSocialId === os.id && styles.filtroChipTextoActivo]}>
+                {os.nombre}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+
+      <View style={styles.filtroDistanciaFila}>
+        {OPCIONES_DISTANCIA.map((km) => (
+          <Pressable
+            key={km}
+            style={[styles.filtroChip, radioKm === km && styles.filtroChipActivo]}
+            onPress={() => setRadioKm(km)}
+          >
+            <Text style={[styles.filtroChipTexto, radioKm === km && styles.filtroChipTextoActivo]}>
+              Hasta {km} km
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       {cargando && <ActivityIndicator style={{ marginTop: 24 }} color="#0B8275" />}
 
       {!cargando && resultados && resultados.length > 0 && cantidadDomicilio > 0 && (
@@ -117,7 +185,11 @@ export default function ResultadosScreen() {
       )}
 
       {resultados && resultados.length === 0 && !cargando && (
-        <Text style={styles.vacio}>No encontramos profesionales cerca para esa especialidad todavía.</Text>
+        <Text style={styles.vacio}>
+          {obraSocialId
+            ? `No encontramos profesionales con esa obra social a menos de ${radioKm} km todavía.`
+            : `No encontramos profesionales a menos de ${radioKm} km para esa especialidad todavía.`}
+        </Text>
       )}
       {resultados && resultados.length > 0 && resultadosFiltrados.length === 0 && !cargando && (
         <Text style={styles.vacio}>Ninguno de los profesionales encontrados atiende a domicilio.</Text>
@@ -203,13 +275,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   botonInicioIcono: { width: 17, height: 21 },
-  botonInicioTexto: { fontSize: 13, fontWeight: '700', color: '#0B3A5C' },
+  botonInicioTexto: { fontFamily: 'WorkSans-SemiBold', fontSize: 13, color: '#0B3A5C' },
   topBarTitulo: { flex: 1 },
-  especialidadNombre: { fontSize: 17, fontWeight: '700', color: '#0B3A5C' },
-  resultadosSubtitulo: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  error: { color: '#c0392b', marginHorizontal: 16, marginTop: 12 },
-  vacio: { textAlign: 'center', color: '#64748B', marginTop: 24, marginHorizontal: 16 },
+  especialidadNombre: { fontFamily: 'Poppins-Bold', fontSize: 17, color: '#0B3A5C' },
+  resultadosSubtitulo: { fontFamily: 'WorkSans-Regular', fontSize: 12, color: '#64748B', marginTop: 2 },
+  error: { fontFamily: 'WorkSans-Regular', color: '#c0392b', marginHorizontal: 16, marginTop: 12 },
+  vacio: { fontFamily: 'WorkSans-Regular', textAlign: 'center', color: '#64748B', marginTop: 24, marginHorizontal: 16 },
   filtroFila: { paddingHorizontal: 16, paddingTop: 14 },
+  filtroDistanciaFila: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12 },
+  filtroObraSocialScroll: { marginTop: 12 },
+  filtroObraSocialContenido: { paddingHorizontal: 16, gap: 8 },
   filtroChip: {
     alignSelf: 'flex-start',
     backgroundColor: '#ffffff',
@@ -220,7 +295,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   filtroChipActivo: { backgroundColor: '#0B8275', borderColor: '#0B8275' },
-  filtroChipTexto: { fontSize: 13, fontWeight: '700', color: '#0B3A5C' },
+  filtroChipTexto: { fontFamily: 'WorkSans-SemiBold', fontSize: 13, color: '#0B3A5C' },
   filtroChipTextoActivo: { color: '#ffffff' },
   listaContenido: { padding: 16, gap: 12 },
   card: {
@@ -240,10 +315,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarTexto: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+  avatarTexto: { color: '#ffffff', fontFamily: 'Poppins-SemiBold', fontSize: 15 },
   cardInfo: { flex: 1 },
   cardEncabezado: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
-  nombreProfesional: { fontSize: 15, fontWeight: '700', color: '#0B3A5C', flexShrink: 1 },
+  nombreProfesional: { fontFamily: 'Poppins-SemiBold', fontSize: 15, color: '#0B3A5C', flexShrink: 1 },
   badgeDomicilio: {
     alignSelf: 'flex-start',
     backgroundColor: '#E3F3F0',
@@ -252,11 +327,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 5,
   },
-  badgeDomicilioTexto: { fontSize: 11, fontWeight: '700', color: '#0B8275' },
-  bio: { fontSize: 12, color: '#64748B', fontStyle: 'italic', marginTop: 2 },
-  detalle: { fontSize: 12, color: '#64748B', marginTop: 4 },
-  verPerfil: { fontSize: 12, color: '#0B8275', fontWeight: '700', marginTop: 6 },
-  distancia: { fontSize: 12, color: '#0B8275', fontWeight: '700' },
+  badgeDomicilioTexto: { fontFamily: 'WorkSans-SemiBold', fontSize: 11, color: '#0B8275' },
+  bio: { fontFamily: 'WorkSans-Regular', fontSize: 12, color: '#64748B', fontStyle: 'italic', marginTop: 2 },
+  detalle: { fontFamily: 'WorkSans-Regular', fontSize: 12, color: '#64748B', marginTop: 4 },
+  verPerfil: { fontFamily: 'WorkSans-SemiBold', fontSize: 12, color: '#0B8275', marginTop: 6 },
+  distancia: { fontFamily: 'WorkSans-SemiBold', fontSize: 12, color: '#0B8275' },
   botonContacto: {
     backgroundColor: '#ffffff',
     borderWidth: 1.5,
@@ -265,5 +340,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
-  botonContactoTexto: { color: '#0B3A5C', fontWeight: '600', fontSize: 14 },
+  botonContactoTexto: { color: '#0B3A5C', fontFamily: 'WorkSans-SemiBold', fontSize: 14 },
 });

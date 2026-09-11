@@ -93,7 +93,14 @@ export default function MapaScreen() {
         >
           {profesionales.map((p) => (
             <Marker key={p.id} coordinate={{ latitude: p.lat, longitude: p.lng }} pinColor="#0B8275">
-              <Callout onPress={() => router.push({ pathname: '/perfil', params: { id: String(p.id) } })}>
+              {/* tooltip={true} es necesario para que el toque del callout
+                  funcione en Android — sin esto, react-native-maps renderiza
+                  el callout como una imagen nativa en Android y el onPress
+                  nunca se dispara (bug conocido de la librería). */}
+              <Callout
+                tooltip
+                onPress={() => router.push({ pathname: '/perfil', params: { id: String(p.id) } })}
+              >
                 <View style={styles.callout}>
                   <Text style={styles.calloutNombre}>
                     {p.nombre} {p.apellido}
@@ -138,11 +145,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconTexto: { fontSize: 18, color: '#0B3A5C' },
-  topBarTitulo: { fontSize: 17, fontWeight: '700', color: '#0B3A5C' },
-  error: { color: '#c0392b', marginHorizontal: 16, marginTop: 12 },
+  topBarTitulo: { fontFamily: 'Poppins-Bold', fontSize: 17, color: '#0B3A5C' },
+  error: { fontFamily: 'WorkSans-Regular', color: '#c0392b', marginHorizontal: 16, marginTop: 12 },
   mapa: { flex: 1 },
-  callout: { minWidth: 180, padding: 4 },
-  calloutNombre: { fontSize: 14, fontWeight: '700', color: '#0B3A5C' },
-  calloutDetalle: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  calloutLink: { fontSize: 12, color: '#0B8275', fontWeight: '700', marginTop: 4 },
+  // Con tooltip={true} el Callout ya no trae la burbuja/borde nativo, así que
+  // se lo damos a mano acá (antes lo dibujaba el sistema operativo).
+  callout: {
+    minWidth: 180,
+    padding: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E4EBF0',
+    shadowColor: '#0B3A5C',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  calloutNombre: { fontFamily: 'Poppins-SemiBold', fontSize: 14, color: '#0B3A5C' },
+  calloutDetalle: { fontFamily: 'WorkSans-Regular', fontSize: 12, color: '#64748B', marginTop: 2 },
+  calloutLink: { fontFamily: 'WorkSans-SemiBold', fontSize: 12, color: '#0B8275', marginTop: 4 },
 });

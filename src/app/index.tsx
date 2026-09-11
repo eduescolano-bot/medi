@@ -40,8 +40,21 @@ const styles = StyleSheet.create({
   },
   contenido: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },
   logo: { width: 220, height: 145 },
-  titulo: { fontSize: 22, fontWeight: '700', color: '#0B3A5C', textAlign: 'center', lineHeight: 28 },
-  subtitulo: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, maxWidth: 280 },
+  titulo: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 22,
+    color: '#0B3A5C',
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  subtitulo: {
+    fontFamily: 'WorkSans-Regular',
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 280,
+  },
   botones: { gap: 10 },
   boton: {
     backgroundColor: '#0B8275',
@@ -49,7 +62,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
   },
-  botonTexto: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+  botonTexto: { color: '#ffffff', fontFamily: 'Poppins-SemiBold', fontSize: 15 },
   botonSecundario: {
     backgroundColor: '#ffffff',
     borderWidth: 1.5,
@@ -58,5 +71,5 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     alignItems: 'center',
   },
-  botonSecundarioTexto: { color: '#0B3A5C', fontWeight: '700', fontSize: 14 },
+  botonSecundarioTexto: { color: '#0B3A5C', fontFamily: 'WorkSans-SemiBold', fontSize: 14 },
 });
